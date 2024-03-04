@@ -20,12 +20,15 @@ class SocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _unlikeController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _followController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Post> get postStream => _postController.stream;
   Stream<Post> get deleteStream => _deleteController.stream;
   Stream<Post> get updateStream => _updateController.stream;
   Stream<Map<String, dynamic>> get likeStream => _likeController.stream;
   Stream<Map<String, dynamic>> get unlikeStream => _unlikeController.stream;
+  Stream<Map<String, dynamic>> get followStream => _followController.stream;
 
   factory SocketService() {
     return _instance;
@@ -94,7 +97,71 @@ class SocketService {
       print('post unliked');
     });
 
+    socket.on('follow', (data) {
+      _followController.sink.add(data);
+      _showFollowNotification(data); // Call a method to show the notification
+    });
+
     socket.onDisconnect((_) => print('Disconnected from WebSocket Server'));
+  }
+
+  Future<void> _showFollowNotification(Map<String, dynamic> data) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    bool receiveNotifications = prefs.getBool('receiveNotifications') ?? true;
+    if (!receiveNotifications) {
+      return;
+    }
+
+    int badgeNumber = (prefs.getInt('badgeNumber') ?? 0) + 1;
+    await prefs.setInt('badgeNumber', badgeNumber);
+
+    bool showPreviews = prefs.getBool('showPreviews') ?? true;
+    String bodyText = showPreviews
+        ? 'You have a new follower.'
+        : '${data['followerUsername']} followed you, tap to view profile.';
+
+    // Get the ID of the user who is being followed
+    String userId = data['followerId'].toString();
+
+    // Assuming you only want to save the title and body for simplicity
+    Map<String, dynamic> notificationData = {
+      'title': 'QuickPost',
+      'body': bodyText,
+      'payload': {
+        'userId': userId,
+        'notificationType': 'follow',
+      } // Include the ID of the user being followed
+    };
+
+    // Await the creation of the notification then save its data
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        channelKey: 'basic_channel',
+        title: 'QuickPost',
+        body: bodyText,
+        notificationLayout: NotificationLayout.Default,
+        displayOnForeground: true,
+        displayOnBackground: true,
+        category: NotificationCategory.Message,
+        payload: {
+          'userId': userId,
+          'notificationType': 'follow',
+        }, // Include the ID of the user being followed
+      ),
+      actionButtons: [
+        NotificationActionButton(
+          key: 'VIEW_PROFILE',
+          label: 'View Profile',
+          actionType: ActionType.Default,
+        ),
+      ],
+    );
+
+    AwesomeNotifications().setGlobalBadgeCounter(badgeNumber);
+
+    await saveNotification(notificationData);
   }
 
   Future<void> _showNotification(
@@ -118,7 +185,10 @@ class SocketService {
     Map<String, dynamic> notificationData = {
       'title': 'QuickPost',
       'body': bodyText,
-      'payload': {'postId': postId}
+      'payload': {
+        'postId': postId,
+        'notificationType': 'like',
+      }
     };
 
     // Await the creation of the notification then save its data
@@ -132,7 +202,10 @@ class SocketService {
         displayOnForeground: true,
         displayOnBackground: true,
         category: NotificationCategory.Message,
-        payload: {'postId': postId},
+        payload: {
+          'postId': postId,
+          'notificationType': 'like',
+        },
       ),
       actionButtons: [
         NotificationActionButton(
@@ -143,14 +216,19 @@ class SocketService {
       ],
     );
 
+    AwesomeNotifications().setGlobalBadgeCounter(badgeNumber);
+
     await saveNotification(notificationData);
   }
 
   Future<void> saveNotification(Map<String, dynamic> notificationData) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> notifications = prefs.getStringList('notifications') ?? [];
-    notifications.add(jsonEncode(
-        notificationData)); // Convert notification data to a string and add it to the list
+
+    // Add timestamp to the notification data
+    notificationData['timestamp'] = DateTime.now().millisecondsSinceEpoch;
+
+    notifications.add(jsonEncode(notificationData));
     await prefs.setStringList('notifications', notifications);
   }
 

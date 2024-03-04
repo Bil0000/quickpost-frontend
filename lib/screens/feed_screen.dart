@@ -8,6 +8,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/screens/myprofile_screen.dart';
 import 'package:quickpost_flutter/screens/post_details_screen.dart';
+import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/search_screen.dart';
 import 'package:quickpost_flutter/screens/settings_screen.dart';
 import 'package:quickpost_flutter/services/post_service.dart';
@@ -127,6 +128,23 @@ class _FeedScreenState extends State<FeedScreen>
   Future<List<String>> fetchNotifications() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> notifications = prefs.getStringList('notifications') ?? [];
+
+    // Sort notifications by the time they were added (assuming they are stored in order)
+    notifications.sort((a, b) {
+      // Convert notification strings to maps
+      Map<String, dynamic> notificationA = jsonDecode(a);
+      Map<String, dynamic> notificationB = jsonDecode(b);
+
+      // Get timestamps from notifications or provide default values
+      int timestampA = notificationA['timestamp'] ??
+          0; // Provide a default value if 'timestamp' is null
+      int timestampB = notificationB['timestamp'] ??
+          0; // Provide a default value if 'timestamp' is null
+
+      // Sort in descending order
+      return timestampB.compareTo(timestampA);
+    });
+
     return notifications;
   }
 
@@ -137,10 +155,20 @@ class _FeedScreenState extends State<FeedScreen>
       Map<String, dynamic> notification = jsonDecode(notificationString);
       String title =
           notification['body']; // Assuming this is unique enough for mapping
-      String postId = notification['payload']['postId'];
+      String? postId = notification['payload']['postId'];
+      String? userId = notification['payload']['userId'];
+      String? notificationType = notification['payload']['notificationType'];
 
-      // Map title to postId
-      titleToPostIdMap[title] = postId;
+      // Store notification data as a JSON string
+      Map<String, dynamic> data = {
+        'postId': postId,
+        'userId': userId,
+        'notificationType': notificationType
+      };
+      String jsonData = jsonEncode(data);
+
+      // Map title to JSON string
+      titleToPostIdMap[title] = jsonData;
 
       return MenuItem(
         title: title,
@@ -166,11 +194,24 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   void onClickMenu(MenuItemProvider item) {
-    String? postId = titleToPostIdMap[item.menuTitle];
-    if (postId != null) {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => PostDetailsScreen(postId: postId),
-      ));
+    String? postData = titleToPostIdMap[item.menuTitle];
+    if (postData != null) {
+      Map<String, dynamic> data = jsonDecode(postData);
+      String? postId = data['postId'];
+      String? userId = data['userId'];
+      String? notificationType = data['notificationType'];
+
+      if (notificationType == 'follow') {
+        // Navigate to profile screen with user ID
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => ProfileScreen(userId: userId),
+        ));
+      } else {
+        // Navigate to post details screen
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => PostDetailsScreen(postId: postId ?? ''),
+        ));
+      }
     }
   }
 

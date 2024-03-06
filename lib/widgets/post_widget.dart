@@ -11,7 +11,6 @@ import 'package:language_picker/languages.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/screens/hashtagposts_screen.dart';
-import 'package:quickpost_flutter/screens/post_details_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/viewimage_screen.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
@@ -348,313 +347,299 @@ class _PostWidgetState extends State<PostWidget> {
           _cancelVisibilityTimer();
         }
       },
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PostDetailsScreen(
-                postId: widget.post.id.toString(),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 30),
+        child: Container(
+          padding: const EdgeInsets.only(
+            left: 16.0,
+            right: 16.0,
+            top: 16.0,
+            bottom: 8.0,
+          ),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withAlpha(200),
+                width: 0.5,
               ),
             ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 30),
-          child: Container(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              top: 16.0,
-              bottom: 8.0,
-            ),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.white.withAlpha(200),
-                  width: 0.5,
-                ),
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to the profile screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProfileScreen(
-                              userId: widget.post.userId,
-                            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to the profile screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfileScreen(
+                            userId: widget.post.userId,
                           ),
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundImage:
-                            NetworkImage(widget.post.profileImageUrl),
-                      ),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 26,
+                      backgroundImage:
+                          NetworkImage(widget.post.profileImageUrl),
                     ),
-                    const SizedBox(width: 8.5),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    FutureBuilder<String>(
-                                      future: postService.fetchUserFullName(
-                                          widget.post.userId ?? ''),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
-                                          if (snapshot.hasData) {
-                                            return Text(snapshot
-                                                .data!); // Display the user's full name
-                                          } else {
-                                            return const Text('User not found');
-                                          }
+                  ),
+                  const SizedBox(width: 8.5),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FutureBuilder<String>(
+                                    future: postService.fetchUserFullName(
+                                        widget.post.userId ?? ''),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.done) {
+                                        if (snapshot.hasData) {
+                                          return Text(snapshot
+                                              .data!); // Display the user's full name
                                         } else {
-                                          return const CircularProgressIndicator(); // Loading indicator
+                                          return const Text('User not found');
                                         }
-                                      },
-                                    ),
-                                    const SizedBox(width: 8.0),
-                                    const Icon(
-                                      Icons.verified,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 4.0),
-                                    Flexible(
-                                      child: GestureDetector(
-                                        onTap: () {},
-                                        child: Text(
-                                          '@${widget.post.username} - ${formatDate(widget.post.createdAt)}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium!
-                                              .copyWith(
-                                                  color: Colors.white
-                                                      .withAlpha(100)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // InkWell(
-                              //   onTap: () {
-                              //     showModalBottomSheet(
-                              //       context: context,
-                              //       builder: (context) {
-                              //         return FutureBuilder<int>(
-                              //           future: ,
-                              //           builder: (context, snapshot) {
-                              //             if (snapshot.connectionState ==
-                              //                 ConnectionState.done) {
-                              //               if (snapshot.hasData) {
-                              //                 return PostMoreActionsModal(
-                              //                   currentUserId: snapshot.data!,
-                              //                   postUserId: widget.post.userId,
-                              //                   postId: widget.post.id,
-                              //                 );
-                              //               } else {
-                              //                 // Handle the scenario when snapshot doesn't have data
-                              //                 return const Center(
-                              //                     child: Text(
-                              //                         'Error retrieving user data'));
-                              //               }
-                              //             } else {
-                              //               // Show loading indicator while waiting for future to complete
-                              //               return const Center(
-                              //                   child: CircularProgressIndicator());
-                              //             }
-                              //           },
-                              //         );
-                              //       },
-                              //     );
-                              //   },
-                              //   customBorder: const CircleBorder(),
-                              //   child: const Icon(Icons.more_horiz),
-                              // ),
-                              InkWell(
-                                onTap: () {
-                                  if (currentUserId == null) {
-                                    // Show an error message or a loading indicator
-                                    print("User ID is not available yet.");
-                                  } else {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      builder: (context) {
-                                        return PostMoreActionsModal(
-                                          currentUserId: currentUserId!,
-                                          postUserId: widget.post.userId,
-                                          postId: widget.post.id,
-                                          post: widget.post,
-                                        );
-                                      },
-                                    );
-                                  }
-                                },
-                                child: const Icon(Icons.more_horiz),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4.0),
-                          FutureBuilder<List<TextSpan>>(
-                            future: _highlightText(
-                              // Check if the caption is longer than the limit and adjust accordingly
-                              isExpanded || widget.post.caption.length <= 100
-                                  ? translatedText ?? widget.post.caption
-                                  : '${widget.post.caption.substring(0, min(100, widget.post.caption.length))}...',
-                            ),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                      ConnectionState.done &&
-                                  snapshot.hasData) {
-                                List<TextSpan> textSpans = snapshot.data!;
-
-                                // Check again before adding "Show More" to ensure caption length exceeds the limit
-                                if (!isExpanded &&
-                                    widget.post.caption.length > 100) {
-                                  textSpans.add(
-                                    TextSpan(
-                                      text: "Show More",
-                                      style:
-                                          const TextStyle(color: Colors.blue),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = () {
-                                          setState(() {
-                                            isExpanded =
-                                                true; // Expand to show the full text
-                                          });
-                                        },
-                                    ),
-                                  );
-                                }
-
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          isExpanded = !isExpanded;
-                                        });
-                                      },
-                                      child: RichText(
-                                        text: TextSpan(
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 15.0),
-                                          children: textSpans,
-                                        ),
-                                      ),
-                                    ),
-                                    // Provide a "Show Less" button if the text is expanded
-                                    if (isExpanded)
-                                      TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            isExpanded =
-                                                false; // Collapse the text
-                                          });
-                                        },
-                                        child: const Text("Show Less",
-                                            style:
-                                                TextStyle(color: Colors.blue)),
-                                      ),
-                                  ],
-                                );
-                              } else {
-                                return const CircularProgressIndicator();
-                              }
-                            },
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              if (!_isTranslated) {
-                                _showLanguagePicker(context);
-                              } else {
-                                revertToOriginal();
-                              }
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _isTranslated
-                                      ? 'Revert to Original'
-                                      : 'Translate',
-                                  style: const TextStyle(
-                                    color: Colors.blue,
+                                      } else {
+                                        return const CircularProgressIndicator(); // Loading indicator
+                                      }
+                                    },
                                   ),
-                                ),
-                                if (_isTranslating) ...[
-                                  const SizedBox(width: 10),
-                                  const SizedBox(
-                                    width: 15,
-                                    height: 15,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.blue,
+                                  const SizedBox(width: 8.0),
+                                  const Icon(
+                                    Icons.verified,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4.0),
+                                  Flexible(
+                                    child: GestureDetector(
+                                      onTap: () {},
+                                      child: Text(
+                                        '@${widget.post.username} - ${formatDate(widget.post.createdAt)}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .copyWith(
+                                                color: Colors.white
+                                                    .withAlpha(100)),
+                                      ),
                                     ),
                                   ),
                                 ],
-                              ],
+                              ),
                             ),
+                            // InkWell(
+                            //   onTap: () {
+                            //     showModalBottomSheet(
+                            //       context: context,
+                            //       builder: (context) {
+                            //         return FutureBuilder<int>(
+                            //           future: ,
+                            //           builder: (context, snapshot) {
+                            //             if (snapshot.connectionState ==
+                            //                 ConnectionState.done) {
+                            //               if (snapshot.hasData) {
+                            //                 return PostMoreActionsModal(
+                            //                   currentUserId: snapshot.data!,
+                            //                   postUserId: widget.post.userId,
+                            //                   postId: widget.post.id,
+                            //                 );
+                            //               } else {
+                            //                 // Handle the scenario when snapshot doesn't have data
+                            //                 return const Center(
+                            //                     child: Text(
+                            //                         'Error retrieving user data'));
+                            //               }
+                            //             } else {
+                            //               // Show loading indicator while waiting for future to complete
+                            //               return const Center(
+                            //                   child: CircularProgressIndicator());
+                            //             }
+                            //           },
+                            //         );
+                            //       },
+                            //     );
+                            //   },
+                            //   customBorder: const CircleBorder(),
+                            //   child: const Icon(Icons.more_horiz),
+                            // ),
+                            InkWell(
+                              onTap: () {
+                                if (currentUserId == null) {
+                                  // Show an error message or a loading indicator
+                                  print("User ID is not available yet.");
+                                } else {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) {
+                                      return PostMoreActionsModal(
+                                        currentUserId: currentUserId!,
+                                        postUserId: widget.post.userId,
+                                        postId: widget.post.id,
+                                        post: widget.post,
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                              child: const Icon(Icons.more_horiz),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4.0),
+                        FutureBuilder<List<TextSpan>>(
+                          future: _highlightText(
+                            // Check if the caption is longer than the limit and adjust accordingly
+                            isExpanded || widget.post.caption.length <= 100
+                                ? translatedText ?? widget.post.caption
+                                : '${widget.post.caption.substring(0, min(100, widget.post.caption.length))}...',
                           ),
-                          const SizedBox(height: 8.0),
-                          if (widget.post.imageUrl?.isNotEmpty == true)
-                            Column(
-                              children: [
-                                const SizedBox(height: 8.0),
-                                InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => ViewImageScreen(
-                                            imageUrl: widget.post.imageUrl!),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16.0),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      border: Border.all(
-                                        color: Colors.white.withAlpha(200),
-                                        width: 0.5,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                    ConnectionState.done &&
+                                snapshot.hasData) {
+                              List<TextSpan> textSpans = snapshot.data!;
+
+                              // Check again before adding "Show More" to ensure caption length exceeds the limit
+                              if (!isExpanded &&
+                                  widget.post.caption.length > 100) {
+                                textSpans.add(
+                                  TextSpan(
+                                    text: "Show More",
+                                    style: const TextStyle(color: Colors.blue),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        setState(() {
+                                          isExpanded =
+                                              true; // Expand to show the full text
+                                        });
+                                      },
+                                  ),
+                                );
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        isExpanded = !isExpanded;
+                                      });
+                                    },
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15.0),
+                                        children: textSpans,
                                       ),
                                     ),
-                                    child: Image.network(widget.post.imageUrl!),
+                                  ),
+                                  // Provide a "Show Less" button if the text is expanded
+                                  if (isExpanded)
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          isExpanded =
+                                              false; // Collapse the text
+                                        });
+                                      },
+                                      child: const Text("Show Less",
+                                          style: TextStyle(color: Colors.blue)),
+                                    ),
+                                ],
+                              );
+                            } else {
+                              return const CircularProgressIndicator();
+                            }
+                          },
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            if (!_isTranslated) {
+                              _showLanguagePicker(context);
+                            } else {
+                              revertToOriginal();
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _isTranslated
+                                    ? 'Revert to Original'
+                                    : 'Translate',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              if (_isTranslating) ...[
+                                const SizedBox(width: 10),
+                                const SizedBox(
+                                  width: 15,
+                                  height: 15,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.blue,
                                   ),
                                 ),
                               ],
-                            ),
-                          const SizedBox(height: 8.0),
-                          PostStats(
-                            isLiked: widget.post.isLikedByCurrentUser,
-                            likeCount: widget.post.likeCount,
-                            onLikeButtonPressed: _handleLikeButtonPressed,
+                            ],
                           ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              ],
-            ),
+                        ),
+                        const SizedBox(height: 8.0),
+                        if (widget.post.imageUrl?.isNotEmpty == true)
+                          Column(
+                            children: [
+                              const SizedBox(height: 8.0),
+                              InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ViewImageScreen(
+                                          imageUrl: widget.post.imageUrl!),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(
+                                      color: Colors.white.withAlpha(200),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Image.network(widget.post.imageUrl!),
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 8.0),
+                        PostStats(
+                          isLiked: widget.post.isLikedByCurrentUser,
+                          likeCount: widget.post.likeCount,
+                          onLikeButtonPressed: _handleLikeButtonPressed,
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ],
           ),
         ),
       ),

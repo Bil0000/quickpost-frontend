@@ -33,8 +33,8 @@ class Post {
       imageUrl: json['imageUrl'] as String?,
       username: json['username'] as String? ?? '',
       profileImageUrl: json['profileImageUrl'] as String? ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+      createdAt: json['createdat'] != null
+          ? DateTime.parse(json['createdat'] as String)
           : DateTime.now(),
       likeCount: json['likeCount'] as int? ?? 0,
       views: json['views'] as int? ?? 0,

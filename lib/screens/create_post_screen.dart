@@ -17,9 +17,7 @@ import 'package:quickpost_flutter/services/post_service.dart';
 typedef OnPostSaved = void Function(String postText, String? postImage);
 
 class MyHomePage extends StatefulWidget {
-  final Function(Post) onNewPost;
-
-  const MyHomePage({Key? key, required this.onNewPost}) : super(key: key);
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   MyHomePageState createState() => MyHomePageState();
@@ -252,8 +250,6 @@ class MyHomePageState extends State<MyHomePage> {
           _currentPost = createdPost;
           _isPosting = false;
         });
-
-        widget.onNewPost(createdPost);
 
         _postTextController.clear();
         _updatePostButtonState();

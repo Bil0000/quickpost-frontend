@@ -53,47 +53,6 @@ class _FeedScreenState extends State<FeedScreen>
     AwesomeNotifications().resetGlobalBadge();
   }
 
-  void _showNotificationsDialog(BuildContext context) async {
-    // Fetch notifications (this could come from local state or a service)
-    List<String> notifications = [
-      'Notification 1',
-      'Notification 2'
-    ]; // Example notifications
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Notifications"),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: notifications.length,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  title: Text(notifications[index]),
-                  onTap: () {
-                    // Handle notification tap if needed
-                  },
-                );
-              },
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _resetUnreadNotificationCount(); // Reset the count when the dialog is closed
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -131,21 +90,18 @@ class _FeedScreenState extends State<FeedScreen>
 
     // Sort notifications by the time they were added (assuming they are stored in order)
     notifications.sort((a, b) {
-      // Convert notification strings to maps
       Map<String, dynamic> notificationA = jsonDecode(a);
       Map<String, dynamic> notificationB = jsonDecode(b);
 
-      // Get timestamps from notifications or provide default values
-      int timestampA = notificationA['timestamp'] ??
-          0; // Provide a default value if 'timestamp' is null
-      int timestampB = notificationB['timestamp'] ??
-          0; // Provide a default value if 'timestamp' is null
+      int timestampA = notificationA['timestamp'] ?? 0;
+      int timestampB = notificationB['timestamp'] ?? 0;
 
-      // Sort in descending order
+      // Sort in descending order to get the most recent notifications first
       return timestampB.compareTo(timestampA);
     });
 
-    return notifications;
+    // Return only the 5 most recent notifications
+    return notifications.take(5).toList();
   }
 
   void showNotificationsMenu() async {
@@ -217,7 +173,7 @@ class _FeedScreenState extends State<FeedScreen>
 
   void onDismiss() {
     setState(() {
-      resetBadgeNumber();
+      _resetUnreadNotificationCount();
     });
   }
 
@@ -244,11 +200,11 @@ class _FeedScreenState extends State<FeedScreen>
   //   }
   // }
 
-  Future<void> resetBadgeNumber() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('badgeNumber', 0);
-    AwesomeNotifications().resetGlobalBadge();
-  }
+  // Future<void> resetBadgeNumber() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.setInt('badgeNumber', 0);
+  //   AwesomeNotifications().resetGlobalBadge();
+  // }
 
   // @override
   // void initState() {

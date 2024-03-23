@@ -44,19 +44,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  void onNewPostAdded(Post newPost) {
-    // Here, you can handle the new post. For example, you might refresh the list of posts
-    // or show a message confirming the post addition.
-    // This is just a placeholder implementation.
-    print("New post added: ${newPost.caption}");
-  }
-
-  void addNewPost(Post post) {
-    setState(() {
-      posts.insert(0, post); // Inserts new post at the beginning of the list
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,8 +56,7 @@ class _MainScreenState extends State<MainScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (context) => MyHomePage(onNewPost: addNewPost)),
+            MaterialPageRoute(builder: (context) => MyHomePage()),
           );
         },
         elevation: 2.0,

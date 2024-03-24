@@ -31,28 +31,28 @@ class _FeedbackFormScreenState extends State<FeedbackFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Send Feedback'),
+        title: const Text('Send Feedback'),
         backgroundColor: Colors.deepPurple,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _feedbackController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Your Feedback',
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _sendFeedback,
-              child: Text('Send Feedback'),
               style: ElevatedButton.styleFrom(
-                primary: Colors.deepPurple,
+                backgroundColor: Colors.deepPurple,
               ),
+              child: const Text('Send Feedback'),
             ),
           ],
         ),

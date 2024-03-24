@@ -23,6 +23,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+             <!-- Deep link configuration -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
+                <data android:scheme="myscheme" android:host="myposts" />
+            </intent-filter>
         </activity>
         <meta-data android:name="com.posthog.posthog.API_KEY" android:value="phc_GkpIt37BTiRTPw2pJztSAHjG1MVoKEyys0h6i7BcRVI" />
 	    <meta-data android:name="com.posthog.posthog.POSTHOG_HOST" android:value="https://app.posthog.com" />

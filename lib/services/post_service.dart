@@ -39,30 +39,61 @@ class PostService {
     }
   }
 
-  Future<http.Response> createPost(String caption, [String? imagePath]) async {
-    final url = Uri.parse('$baseUrl/post/create');
+  // Future<http.Response> createPost(String caption, [String? imagePath]) async {
+  //   final url = Uri.parse('$baseUrl/post/create');
+  //   final accessToken = await _storage.read(key: 'accessToken');
+
+  //   var request = http.MultipartRequest('POST', url)
+  //     ..fields['caption'] = caption
+  //     ..headers['Authorization'] = 'Bearer $accessToken';
+
+  //   if (imagePath != null) {
+  //     request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+  //   }
+
+  //   var streamedResponse = await request.send();
+
+  //   // Convert the streamed response to a http.Response object
+  //   var response = await http.Response.fromStream(streamedResponse);
+
+  //   // Check the status code of the response
+  //   if (response.statusCode != 201) {
+  //     throw Exception('Failed to create post');
+  //   }
+
+  //   // Return the response object
+  //   return response;
+  // }
+
+  Future<http.Response> createPost(String caption,
+      {String? imagePath, String? gifUrl}) async {
+    var url = Uri.parse('$baseUrl/post/create');
     final accessToken = await _storage.read(key: 'accessToken');
+    var headers = {
+      'Authorization': 'Bearer $accessToken',
+      'Content-Type': 'application/json'
+    };
 
-    var request = http.MultipartRequest('POST', url)
-      ..fields['caption'] = caption
-      ..headers['Authorization'] = 'Bearer $accessToken';
-
-    if (imagePath != null) {
+    // Check if a GIF URL is provided and prioritize it over imagePath
+    if (gifUrl != null) {
+      var body = jsonEncode({
+        'caption': caption,
+        'gifUrl': gifUrl, // Ensure your backend expects a gifUrl field
+      });
+      return http.post(url, headers: headers, body: body);
+    } else if (imagePath != null) {
+      // If an image path is provided but no GIF URL, handle file upload
+      var request = http.MultipartRequest('POST', url)
+        ..fields['caption'] = caption
+        ..headers.addAll(headers);
       request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      var streamedResponse = await request.send();
+      return http.Response.fromStream(streamedResponse);
+    } else {
+      // If neither is provided, just send the caption
+      var body = jsonEncode({'caption': caption});
+      return http.post(url, headers: headers, body: body);
     }
-
-    var streamedResponse = await request.send();
-
-    // Convert the streamed response to a http.Response object
-    var response = await http.Response.fromStream(streamedResponse);
-
-    // Check the status code of the response
-    if (response.statusCode != 201) {
-      throw Exception('Failed to create post');
-    }
-
-    // Return the response object
-    return response;
   }
 
   Future<void> likePost(String postId) async {

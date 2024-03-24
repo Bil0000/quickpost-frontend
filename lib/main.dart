@@ -5,10 +5,12 @@ import 'package:quickpost_flutter/screens/contact_form_screen.dart';
 import 'package:quickpost_flutter/screens/feed_screen.dart';
 import 'package:quickpost_flutter/screens/login_screen.dart';
 import 'package:quickpost_flutter/screens/main_screen.dart';
+import 'package:quickpost_flutter/screens/post_details_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/registration_screen.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uni_links/uni_links.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +65,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    initUniLinks();
     NotificationController.setNavigatorKey(navigatorKey);
     AwesomeNotifications().setListeners(
       onActionReceivedMethod: NotificationController.onActionReceivedMethod,
@@ -73,6 +76,39 @@ class _MyAppState extends State<MyApp> {
       onDismissActionReceivedMethod:
           NotificationController.onDismissActionReceivedMethod,
     );
+  }
+
+  void initUniLinks() async {
+    // Handle any initial link that might have triggered the app to open
+    try {
+      final initialUri = await getInitialUri();
+      if (initialUri != null) {
+        handleIncomingLink(initialUri);
+      }
+    } catch (e) {
+      // Handle error, could be a malformed URI, etc.
+    }
+
+    // Listen for new links coming in while the app is running
+    uriLinkStream.listen((Uri? uri) {
+      if (uri != null) {
+        handleIncomingLink(uri);
+      }
+    }, onError: (err) {
+      // Handle errors from stream (if any)
+    });
+  }
+
+  void handleIncomingLink(Uri uri) {
+    // Check the link and navigate to the appropriate screen
+    if (uri.host == 'myposts') {
+      String? postId = uri.queryParameters['postId'];
+      if (postId != null) {
+        navigatorKey.currentState?.push(MaterialPageRoute(
+          builder: (context) => PostDetailsScreen(postId: postId),
+        ));
+      }
+    }
   }
 
   @override

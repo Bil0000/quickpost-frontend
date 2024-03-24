@@ -630,6 +630,7 @@ class _PostWidgetState extends State<PostWidget> {
                           ),
                         const SizedBox(height: 8.0),
                         PostStats(
+                          post: widget.post,
                           isLiked: widget.post.isLikedByCurrentUser,
                           likeCount: widget.post.likeCount,
                           onLikeButtonPressed: _handleLikeButtonPressed,

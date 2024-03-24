@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/utils/format_number.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PostStats extends StatefulWidget {
+  final Post post;
   final bool isLiked;
   final int likeCount;
   final VoidCallback onLikeButtonPressed;
 
   const PostStats({
     Key? key,
+    required this.post,
     required this.isLiked,
     required this.likeCount,
     required this.onLikeButtonPressed,
@@ -113,16 +117,18 @@ class _PostStatsState extends State<PostStats>
             Text(formatNumber(widget.likeCount)),
           ],
         ),
-        const Row(
+        Row(
           children: [
-            Icon(Icons.remove_red_eye_outlined),
-            SizedBox(width: 4.0),
-            Text('0'),
+            const Icon(Icons.remove_red_eye_outlined),
+            const SizedBox(width: 4.0),
+            Text(widget.post.views.toString()),
           ],
         ),
         IconButton(
           visualDensity: VisualDensity.compact,
-          onPressed: () {},
+          onPressed: () {
+            Share.share('myscheme://myposts?postId=${widget.post.id}');
+          },
           icon: const Icon(Icons.ios_share_outlined),
         ),
       ],

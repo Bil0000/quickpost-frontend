@@ -212,20 +212,6 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _handleCreatePost({String? gifUrl}) async {
     if (_postTextController.text.isEmpty && _imagePath == null) {
-      // Using AwesomeSnackbarContent for error message
-      final snackBar = SnackBar(
-        showCloseIcon: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        content: AwesomeSnackbarContent(
-          title: 'Oops!',
-          message: 'Post cannot be empty',
-          contentType: ContentType.warning,
-        ),
-        behavior: SnackBarBehavior.floating,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
       return;
     }
 
@@ -241,8 +227,8 @@ class MyHomePageState extends State<MyHomePage> {
     }
 
     try {
-      final response =
-          await _postService.createPost(_postTextController.text, mediaPath);
+      var response = await _postService.createPost(_postTextController.text,
+          imagePath: mediaPath, gifUrl: _selectedGifUrl);
 
       if (response.statusCode == 201) {
         final createdPost = Post.fromJson(json.decode(response.body));

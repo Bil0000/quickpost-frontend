@@ -68,8 +68,9 @@ dev_dependencies:
     sdk: flutter
 
 flutter_native_splash:
-  image: assets/splash.png
-  color: "#3d3854"
+  background_image: assets/splash.png
+  ios: true
+  android: true
 
 flutter_launcher_icons:
   android: true

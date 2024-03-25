@@ -9,11 +9,12 @@ import 'package:jwt_decode/jwt_decode.dart';
 import 'package:quickpost_flutter/models/follower_model.dart';
 import 'package:quickpost_flutter/models/following_model.dart';
 import 'package:quickpost_flutter/models/user_model.dart';
+import 'package:quickpost_flutter/utils/config.dart';
 
 class AuthService {
   final _storage = const FlutterSecureStorage();
 
-  final String baseUrl = 'http://localhost:3000/auth'; // Server url
+  final String baseUrl = '${AppConfig.baseUrl}/auth'; // Server url
 
   Future<http.Response> registerUser(
       Map<String, dynamic> userData, File? profileImage) async {
@@ -124,7 +125,7 @@ class AuthService {
   }
 
   Future<String?> getEmailByUsername(String username) async {
-    final apiUrl = 'http://localhost:3000/auth/get-email-by-username/$username';
+    final apiUrl = '$baseUrl/get-email-by-username/$username';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));

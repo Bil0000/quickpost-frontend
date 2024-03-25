@@ -2,10 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickpost_flutter/utils/config.dart';
 
 class SearchService {
-  final String baseUrl =
-      'http://localhost:3000'; // Update with your actual base URL
+  final String baseUrl = AppConfig.baseUrl;
+
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<Map<String, dynamic>> search(String query) async {

@@ -101,7 +101,7 @@ class _MyAppState extends State<MyApp> {
 
   void handleIncomingLink(Uri uri) {
     // Check the link and navigate to the appropriate screen
-    if (uri.host == 'myposts') {
+    if (uri.host == 'viewpost') {
       String? postId = uri.queryParameters['postId'];
       if (postId != null) {
         navigatorKey.currentState?.push(MaterialPageRoute(

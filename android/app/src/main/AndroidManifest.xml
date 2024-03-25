@@ -29,7 +29,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
-                <data android:scheme="myscheme" android:host="myposts" />
+                <data android:scheme="quickpost" android:host="viewpost" />
             </intent-filter>
         </activity>
         <meta-data android:name="com.posthog.posthog.API_KEY" android:value="phc_GkpIt37BTiRTPw2pJztSAHjG1MVoKEyys0h6i7BcRVI" />

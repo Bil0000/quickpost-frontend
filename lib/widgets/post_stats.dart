@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
+import 'package:quickpost_flutter/screens/comment_screen.dart';
 import 'package:quickpost_flutter/utils/format_number.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -84,7 +85,17 @@ class _PostStatsState extends State<PostStats>
           children: [
             IconButton(
               icon: const Icon(Icons.comment_outlined),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CommentsScreen(
+                      postId: widget.post.id!,
+                      userId: widget.post.userId,
+                    ),
+                  ),
+                );
+              },
             ),
             const Text('0'),
           ],
@@ -121,13 +132,13 @@ class _PostStatsState extends State<PostStats>
           children: [
             const Icon(Icons.remove_red_eye_outlined),
             const SizedBox(width: 4.0),
-            Text(widget.post.views.toString()),
+            Text(formatNumber(widget.post.views)),
           ],
         ),
         IconButton(
           visualDensity: VisualDensity.compact,
           onPressed: () {
-            Share.share('myscheme://myposts?postId=${widget.post.id}');
+            Share.share('quickpost://viewpost?postId=${widget.post.id}');
           },
           icon: const Icon(Icons.ios_share_outlined),
         ),

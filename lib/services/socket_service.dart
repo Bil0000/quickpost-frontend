@@ -5,6 +5,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:jwt_decode/jwt_decode.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
+import 'package:quickpost_flutter/utils/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -45,7 +46,7 @@ class SocketService {
   }
 
   void connect() {
-    socket = IO.io('http://localhost:3000', <String, dynamic>{
+    socket = IO.io(AppConfig.baseUrl, <String, dynamic>{
       'transports': ['websocket'],
     });
 

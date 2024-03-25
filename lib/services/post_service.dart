@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:quickpost_flutter/models/post_model.dart';
+import 'package:quickpost_flutter/utils/config.dart';
 
 class PostService {
-  final String baseUrl = 'http://localhost:3000';
+  final String baseUrl = AppConfig.baseUrl;
+
   final _storage = const FlutterSecureStorage();
 
   Future<List<Post>> fetchPosts() async {

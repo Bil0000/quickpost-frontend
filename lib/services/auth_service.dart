@@ -547,4 +547,23 @@ class AuthService {
       throw Exception('Failed to fetch blocked users');
     }
   }
+
+  Future<String?> fetchUsernameById(String userId) async {
+    final accessToken = await _storage.read(key: 'accessToken');
+    final response = await http.get(
+      Uri.parse('$baseUrl/$userId'), // Update this URL as needed
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['username']; // Assuming the response contains the username
+    } else {
+      print('Failed to fetch username: ${response.body}');
+      return null; // Handle error or return null if username cannot be fetched
+    }
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +6,7 @@ import 'package:quickpost_flutter/models/comment_model.dart';
 import 'package:quickpost_flutter/screens/hashtagposts_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/viewimage_screen.dart';
+import 'package:quickpost_flutter/services/comment_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/auth_service.dart';
@@ -51,6 +53,37 @@ class _CommentWidgetState extends State<CommentWidget> {
     setState(() {
       _isEditing = false;
     });
+  }
+
+  void _handleUpdateComment() async {
+    if (_editController.text.isNotEmpty) {
+      try {
+        await CommentService()
+            .updateComment(widget.comment.id.toString(), _editController.text);
+
+        // Close the edit mode
+        setState(() {
+          _isEditing = false;
+          widget.comment.text =
+              _editController.text; // Update the local comment text
+        });
+      } catch (e) {
+        print(e); // For debugging
+        final snackBar = SnackBar(
+          showCloseIcon: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          content: AwesomeSnackbarContent(
+            title: 'Error!',
+            message: 'Failed to update comment',
+            contentType: ContentType.failure,
+          ),
+          behavior: SnackBarBehavior.floating,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
+    }
   }
 
   void _startEditingReply(int replyId, String initialText) {
@@ -213,17 +246,10 @@ class _CommentWidgetState extends State<CommentWidget> {
                     'Replied on ${DateFormat('dd MMM yyyy').format(_replies[index].createdAt)}',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
                   ),
-                  if (widget.currentUserId == _replies[index].userId)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {},
-                        ),
-                        IconButton(
-                            icon: const Icon(Icons.edit), onPressed: () {}),
-                      ],
+                  if (widget.currentUserId == widget.comment.userId)
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {},
                     ),
                   if (_isEditingReply[reply.id] ?? false)
                     Column(
@@ -271,6 +297,11 @@ class _CommentWidgetState extends State<CommentWidget> {
     return username;
   }
 
+  Future<String> fetchUsernameById(String id) async {
+    final username = await authService.fetchUsernameById(id);
+    return username ?? ''; // Provide a default value if null
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -280,9 +311,9 @@ class _CommentWidgetState extends State<CommentWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FutureBuilder<String>(
-              future: _fetchUsername(widget.comment.userId),
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+            FutureBuilder<String?>(
+              future: authService.fetchUsernameById(widget.comment.userId),
+              builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const CircularProgressIndicator();
                 } else if (snapshot.hasError) {
@@ -322,7 +353,8 @@ class _CommentWidgetState extends State<CommentWidget> {
                 }
               },
             ),
-            if (widget.comment.commentImageUrl!.isNotEmpty)
+            if (widget.comment.commentImageUrl != null &&
+                widget.comment.commentImageUrl!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: SizedBox(
@@ -363,7 +395,28 @@ class _CommentWidgetState extends State<CommentWidget> {
                 if (widget.currentUserId == widget.comment.userId)
                   IconButton(
                     icon: const Icon(Icons.delete),
-                    onPressed: () {},
+                    onPressed: () async {
+                      try {
+                        await CommentService()
+                            .deleteComment(widget.comment.id.toString());
+                        widget.onCommentDeleted?.call();
+                      } catch (e) {
+                        print(e);
+                        final snackBar = SnackBar(
+                          showCloseIcon: false,
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          content: AwesomeSnackbarContent(
+                            title: 'Error!',
+                            message: 'Failed to delete comment',
+                            contentType: ContentType.failure,
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      }
+                    },
                   ),
                 if (widget.currentUserId == widget.comment.userId)
                   IconButton(
@@ -419,13 +472,23 @@ class _CommentWidgetState extends State<CommentWidget> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Save'),
-                  ),
-                  TextButton(
-                    onPressed: _stopEditing,
-                    child: const Text('Cancel'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: _handleUpdateComment,
+                        child: const Text('Save'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isEditing =
+                                false; // Exit edit mode without saving changes
+                          });
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
                 ],
               )

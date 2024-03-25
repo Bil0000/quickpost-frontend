@@ -14,6 +14,7 @@ import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/screens/hashtagposts_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/viewimage_screen.dart';
+import 'package:quickpost_flutter/screens/viewvideo_screen.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
 import 'package:quickpost_flutter/services/post_service.dart';
 import 'package:quickpost_flutter/services/socket_service.dart';
@@ -621,9 +622,31 @@ class _PostWidgetState extends State<PostWidget> {
                         const SizedBox(height: 8.0),
                         if (_videoController != null &&
                             _videoController!.value.isInitialized)
-                          AspectRatio(
-                            aspectRatio: _videoController!.value.aspectRatio,
-                            child: FlickVideoPlayer(flickManager: flickManager),
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => ViewVideoScreen(
+                                      videoUrl: widget.post.videoUrl!),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(
+                                  color: Colors.white.withAlpha(200),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: AspectRatio(
+                                aspectRatio:
+                                    _videoController!.value.aspectRatio,
+                                child: FlickVideoPlayer(
+                                    flickManager: flickManager),
+                              ),
+                            ),
                           ),
                         if (widget.post.imageUrl?.isNotEmpty == true)
                           Column(

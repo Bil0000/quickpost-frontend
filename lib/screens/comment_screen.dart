@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:quickpost_flutter/models/comment_model.dart';
+import 'package:quickpost_flutter/services/comment_service.dart';
 
 import '../widgets/comment_widget.dart';
 
@@ -21,11 +23,59 @@ class CommentsScreen extends StatefulWidget {
 }
 
 class _CommentsScreenState extends State<CommentsScreen> {
+  final TextEditingController commentController = TextEditingController();
+
   File? _image;
   String? _base64Image;
   List<Comment> comments = [];
   int page = 0;
   bool _isReplying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      List<Comment> loadedComments =
+          await CommentService().loadComments(widget.postId);
+      setState(() {
+        comments = loadedComments;
+      });
+    } catch (e) {
+      print("Failed to load comments: $e");
+      // Optionally, show an error message in the UI
+    }
+  }
+
+  Future<void> _submitComment() async {
+    String text = commentController.text.trim();
+    if (text.isNotEmpty) {
+      try {
+        await CommentService().submitComment(widget.postId, text);
+        commentController.clear();
+        // Optionally, clear _replyingToCommentId if you're replying to a specific comment
+        _loadComments(); // Reload comments to show the newly added comment
+      } catch (e) {
+        print("Failed to submit comment: $e");
+        final snackBar = SnackBar(
+          showCloseIcon: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          content: AwesomeSnackbarContent(
+            title: 'Error!',
+            message: 'Failed to add comment',
+            contentType: ContentType.failure,
+          ),
+          behavior: SnackBarBehavior.floating,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
+    }
+  }
 
   Future pickImage() async {
     final pickedFile =
@@ -115,8 +165,6 @@ class _CommentsScreenState extends State<CommentsScreen> {
   }
 
   Widget _buildCommentInputField() {
-    final TextEditingController commentController = TextEditingController();
-
     if (_isReplying) {
       return Container(); // Return an empty container when replying
     }
@@ -144,7 +192,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
           padding: const EdgeInsets.only(bottom: 15),
           child: IconButton(
             icon: const Icon(Icons.send),
-            onPressed: () {},
+            onPressed: _submitComment,
           ),
         ),
       ],

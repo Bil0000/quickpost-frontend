@@ -2,7 +2,7 @@ class Comment {
   final String? id;
   final String postId;
   final String userId;
-  final String text;
+  String text;
   final String? commentImageUrl;
   final String? parentComment;
   final DateTime createdAt;
@@ -26,11 +26,13 @@ class Comment {
       userId: json['userId'] as String? ?? '',
       text: json['text'] as String? ?? '',
       commentImageUrl: json['commentImageUrl'] as String?,
-      parentComment: json['parentComment'] as String? ?? '',
-      replies: json['replies'] as List<Comment>?,
-      createdAt: json['createdat'] != null
-          ? DateTime.parse(json['createdat'] as String)
+      parentComment: json['parentComment'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
+      replies: (json['replies'] as List<dynamic>?)
+          ?.map((e) => Comment.fromJson(e))
+          .toList(),
     );
   }
 }

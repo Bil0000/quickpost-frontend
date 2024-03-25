@@ -97,7 +97,7 @@ class _PostStatsState extends State<PostStats>
                 );
               },
             ),
-            const Text('0'),
+            Text(formatNumber(widget.post.commentCount)),
           ],
         ),
         // const Row(

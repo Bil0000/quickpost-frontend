@@ -13,6 +13,7 @@ import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
 import 'package:quickpost_flutter/services/post_service.dart';
+import 'package:video_player/video_player.dart';
 
 typedef OnPostSaved = void Function(String postText, String? postImage);
 
@@ -24,9 +25,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
+  VideoPlayerController? _videoPlayerController;
   final _storage = const FlutterSecureStorage();
   Post? _currentPost;
   String? _imagePath;
+  String? _videoPath;
   UserModel? _user;
   bool _isPosting = false;
   final ValueNotifier<bool> _isPostButtonEnabled = ValueNotifier(false);
@@ -127,6 +130,7 @@ class MyHomePageState extends State<MyHomePage> {
     _postTextController.dispose();
     _isPostButtonEnabled.dispose();
     _currentCharacterCount.dispose();
+    _videoPlayerController?.dispose();
     super.dispose();
   }
 
@@ -176,9 +180,41 @@ class MyHomePageState extends State<MyHomePage> {
     if (image != null) {
       setState(() {
         _imagePath = image.path;
+        _videoPath = null;
         _updatePostButtonState();
       });
     }
+  }
+
+  Future<void> _pickVideo() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+    if (video != null) {
+      setState(() {
+        _videoPath = video.path;
+        _imagePath = null;
+        _initializeVideoPlayer(video.path);
+        // _updatePostButtonState();
+      });
+    }
+  }
+
+  Future<void> _initializeVideoPlayer(String videoPath) async {
+    _videoPlayerController?.dispose(); // Dispose any existing controller
+    _videoPlayerController = VideoPlayerController.file(File(videoPath))
+      ..initialize().then((_) {
+        setState(() {}); // Trigger a rebuild when video is initialized
+      })
+      ..setLooping(true)
+      ..addListener(() {
+        final error = _videoPlayerController?.value.errorDescription;
+        if (error != null) {
+          print("Video Player Error: $error");
+        }
+      });
+
+    // Attempt to play the video
+    _videoPlayerController?.play();
   }
 
   Future<void> pickGif() async {
@@ -227,8 +263,12 @@ class MyHomePageState extends State<MyHomePage> {
     }
 
     try {
-      var response = await _postService.createPost(_postTextController.text,
-          imagePath: mediaPath, gifUrl: _selectedGifUrl);
+      var response = await _postService.createPost(
+        _postTextController.text,
+        imagePath: mediaPath,
+        videoPath: _videoPath,
+        gifUrl: _selectedGifUrl,
+      );
 
       if (response.statusCode == 201) {
         final createdPost = Post.fromJson(json.decode(response.body));
@@ -492,6 +532,56 @@ class MyHomePageState extends State<MyHomePage> {
                         ],
                       ),
                     ),
+                  if (_videoPath != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              // Toggle play/pause state on tap
+                              if (_videoPlayerController != null) {
+                                if (_videoPlayerController!.value.isPlaying) {
+                                  _videoPlayerController!.pause();
+                                } else {
+                                  _videoPlayerController!.play();
+                                }
+                              }
+                            },
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                maxHeight:
+                                    300, // Adjust the max height as per your UI needs
+                              ),
+                              child: _videoPlayerController != null &&
+                                      _videoPlayerController!
+                                          .value.isInitialized
+                                  ? AspectRatio(
+                                      aspectRatio: _videoPlayerController!
+                                          .value.aspectRatio,
+                                      child:
+                                          VideoPlayer(_videoPlayerController!),
+                                    )
+                                  : const Center(
+                                      child:
+                                          CircularProgressIndicator()), // Show loading indicator while the video is initializing
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                _videoPath = null;
+                                _videoPlayerController =
+                                    null; // Make sure to dispose of the controller
+                                _updatePostButtonState();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -526,7 +616,7 @@ class MyHomePageState extends State<MyHomePage> {
                 right: 15,
               ),
               child: GestureDetector(
-                onTap: () {},
+                onTap: _pickVideo,
                 child: const Icon(Icons.video_collection_sharp),
               ),
             ),

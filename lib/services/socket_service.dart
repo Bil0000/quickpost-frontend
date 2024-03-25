@@ -70,6 +70,7 @@ class SocketService {
           userId: '',
           caption: '',
           imageUrl: '',
+          videoUrl: '',
           username: '',
           profileImageUrl: '',
           createdAt: DateTime.now(),

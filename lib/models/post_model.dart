@@ -3,6 +3,7 @@ class Post {
   final String userId;
   final String caption;
   final String? imageUrl;
+  final String? videoUrl;
   final String username;
   final String profileImageUrl;
   final DateTime createdAt;
@@ -16,6 +17,7 @@ class Post {
     required this.userId,
     required this.caption,
     required this.imageUrl,
+    required this.videoUrl,
     required this.username,
     required this.profileImageUrl,
     required this.createdAt,
@@ -31,6 +33,7 @@ class Post {
       userId: json['userId'] as String? ?? '',
       caption: json['caption'] as String? ?? '',
       imageUrl: json['imageUrl'] as String?,
+      videoUrl: json['videoUrl'] as String?,
       username: json['username'] as String? ?? '',
       profileImageUrl: json['profileImageUrl'] as String? ?? '',
       createdAt: json['createdat'] != null

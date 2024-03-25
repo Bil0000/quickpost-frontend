@@ -58,7 +58,11 @@ dependencies:
   popup_menu: ^2.0.0
   uni_links: ^0.5.1
   share_plus: ^7.2.1
+  video_player: ^2.8.3
+  flick_video_player: ^0.7.0
 
+dependency_overrides:
+  win32: ^5.0.0
 
 dev_dependencies:
   flutter_lints: ^2.0.1

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flick_video_player/flick_video_player.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -20,6 +21,7 @@ import 'package:quickpost_flutter/widgets/post_more_actions_modal.dart';
 import 'package:quickpost_flutter/widgets/post_stats.dart';
 import 'package:translator/translator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class PostWidget extends StatefulWidget {
@@ -32,6 +34,7 @@ class PostWidget extends StatefulWidget {
 }
 
 class _PostWidgetState extends State<PostWidget> {
+  VideoPlayerController? _videoController;
   bool isExpanded = false;
   bool isLiked = false;
   final PostService postService = PostService();
@@ -47,17 +50,32 @@ class _PostWidgetState extends State<PostWidget> {
   String? translatedText;
   bool _isTranslated = false;
   bool _isTranslating = false;
+  late FlickManager flickManager = FlickManager(
+      videoPlayerController: VideoPlayerController.networkUrl(
+          Uri.parse(widget.post.videoUrl.toString())));
 
   @override
   void initState() {
     isLiked = widget.post.isLikedByCurrentUser;
     bool showMoreButton = widget.post.caption.length > 100 && !isExpanded;
+    _initializeVideoPlayer();
     _getCurrentUserId();
     _loadUserInfo();
     // postService.markPostSeen(widget.post.id.toString());
     super.initState();
     _listenToLikeEvents();
     _listenToUnlikeEvents();
+  }
+
+  void _initializeVideoPlayer() {
+    if (widget.post.videoUrl != null) {
+      _videoController = VideoPlayerController.network(widget.post.videoUrl!)
+        ..initialize().then((_) {
+          // Ensure the first frame is shown after the video is initialized, even before play button has been pressed.
+          setState(() {});
+          _videoController!.play();
+        });
+    }
   }
 
   void _showLanguagePicker(BuildContext context) async {
@@ -601,6 +619,12 @@ class _PostWidgetState extends State<PostWidget> {
                           ),
                         ),
                         const SizedBox(height: 8.0),
+                        if (_videoController != null &&
+                            _videoController!.value.isInitialized)
+                          AspectRatio(
+                            aspectRatio: _videoController!.value.aspectRatio,
+                            child: FlickVideoPlayer(flickManager: flickManager),
+                          ),
                         if (widget.post.imageUrl?.isNotEmpty == true)
                           Column(
                             children: [
@@ -674,6 +698,7 @@ class _PostWidgetState extends State<PostWidget> {
     _cancelVisibilityTimer();
     _likeSubscription.cancel();
     _unlikeSubscription.cancel();
+    _videoController?.dispose();
     super.dispose();
   }
 }

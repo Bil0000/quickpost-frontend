@@ -68,33 +68,35 @@ class PostService {
   // }
 
   Future<http.Response> createPost(String caption,
-      {String? imagePath, String? gifUrl}) async {
+      {String? imagePath, String? videoPath, String? gifUrl}) async {
     var url = Uri.parse('$baseUrl/post/create');
     final accessToken = await _storage.read(key: 'accessToken');
     var headers = {
       'Authorization': 'Bearer $accessToken',
-      'Content-Type': 'application/json'
     };
 
-    // Check if a GIF URL is provided and prioritize it over imagePath
+    // If there's a GIF URL, prioritize it over image and video paths.
     if (gifUrl != null) {
       var body = jsonEncode({
         'caption': caption,
-        'gifUrl': gifUrl, // Ensure your backend expects a gifUrl field
+        'gifUrl': gifUrl,
       });
+      headers['Content-Type'] = 'application/json';
       return http.post(url, headers: headers, body: body);
-    } else if (imagePath != null) {
-      // If an image path is provided but no GIF URL, handle file upload
+    } else {
       var request = http.MultipartRequest('POST', url)
         ..fields['caption'] = caption
         ..headers.addAll(headers);
-      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      if (imagePath != null) {
+        request.files
+            .add(await http.MultipartFile.fromPath('image', imagePath));
+      } else if (videoPath != null) {
+        request.files
+            .add(await http.MultipartFile.fromPath('video', videoPath));
+      }
+
       var streamedResponse = await request.send();
       return http.Response.fromStream(streamedResponse);
-    } else {
-      // If neither is provided, just send the caption
-      var body = jsonEncode({'caption': caption});
-      return http.post(url, headers: headers, body: body);
     }
   }
 

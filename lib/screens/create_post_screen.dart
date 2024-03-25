@@ -84,7 +84,9 @@ class MyHomePageState extends State<MyHomePage> {
     // Check if the content is available and does not exceed the maximum character count
     bool isContentAvailable =
         textLength > 0 && textLength <= _maxCharacterCount ||
-            _imagePath != null;
+            _imagePath != null ||
+            _videoPath != null ||
+            _selectedGifUrl != null;
     _isPostButtonEnabled.value = isContentAvailable;
   }
 
@@ -194,7 +196,7 @@ class MyHomePageState extends State<MyHomePage> {
         _videoPath = video.path;
         _imagePath = null;
         _initializeVideoPlayer(video.path);
-        // _updatePostButtonState();
+        _updatePostButtonState();
       });
     }
   }

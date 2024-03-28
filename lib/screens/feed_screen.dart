@@ -57,6 +57,7 @@ class _FeedScreenState extends State<FeedScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
     _initializeUnreadNotificationCount();
     AwesomeNotifications().isNotificationAllowed().then(
           (isAllowed) => {
@@ -332,12 +333,16 @@ class _FeedForYouTab extends StatefulWidget {
 
 class _FeedForYouTabState extends State<_FeedForYouTab> {
   final PostService postService = PostService();
+
   List<Post> _allPosts = [];
   final ValueNotifier<bool> _showNewPostBanner = ValueNotifier(false);
+  bool _isLoading = false;
+  final int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
+    _fetchInitialPosts();
     // Posthog().screen(
     //   screenName: 'For you tab',
     // );
@@ -410,6 +415,39 @@ class _FeedForYouTabState extends State<_FeedForYouTab> {
         _showNewPostBanner.value = false;
       }
     });
+
+    widget.scrollController.addListener(() {
+      double maxScroll = widget.scrollController.position.maxScrollExtent;
+      double currentScroll = widget.scrollController.position.pixels;
+      double delta = 100.0; // or something else you want
+      if (maxScroll - currentScroll <= delta) {
+        // Start loading more posts earlier
+        _fetchMorePosts();
+      }
+    });
+  }
+
+  void _fetchInitialPosts() async {
+    List<Post> initialPosts = await postService.fetchPosts();
+    setState(() {
+      _allPosts = initialPosts;
+    });
+  }
+
+  void _fetchMorePosts() async {
+    if (_isLoading) return; // Prevent multiple simultaneous loads
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    List<Post> morePosts = await postService.fetchPosts(
+        offset: _allPosts.length, limit: _pageSize);
+
+    setState(() {
+      _allPosts.addAll(morePosts);
+      _isLoading = false;
+    });
   }
 
   Future<void> captureScreen() async {
@@ -426,13 +464,13 @@ class _FeedForYouTabState extends State<_FeedForYouTab> {
           physics: const ClampingScrollPhysics(),
           key: const PageStorageKey<String>('postList'),
           controller: widget.scrollController,
-          itemCount: _allPosts.length,
+          itemCount: _allPosts.length + (_isLoading ? 1 : 0),
           itemBuilder: (context, index) {
-            final post = _allPosts[index];
-            return PostWidget(
-              key: ValueKey(post.id),
-              post: post,
-            );
+            if (index < _allPosts.length) {
+              return PostWidget(post: _allPosts[index]);
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
           },
         ),
         ValueListenableBuilder<bool>(

@@ -10,13 +10,13 @@ class PostService {
 
   final _storage = const FlutterSecureStorage();
 
-  Future<List<Post>> fetchPosts() async {
+  Future<List<Post>> fetchPosts({int limit = 10, int offset = 0}) async {
     // Retrieve the access token from secure storage
     final accessToken = await _storage.read(key: 'accessToken');
 
     // Include the token in the header
     final response = await http.get(
-      Uri.parse('$baseUrl/post/posts'),
+      Uri.parse('$baseUrl/post/posts?limit=$limit&offset=$offset'),
       headers: {
         'Authorization': 'Bearer $accessToken',
       },

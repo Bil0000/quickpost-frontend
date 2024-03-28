@@ -548,10 +548,10 @@ class AuthService {
     }
   }
 
-  Future<String?> fetchUsernameById(String userId) async {
+  Future<UserModel?> fetchUserById(String userId) async {
     final accessToken = await _storage.read(key: 'accessToken');
     final response = await http.get(
-      Uri.parse('$baseUrl/$userId'), // Update this URL as needed
+      Uri.parse('$baseUrl/$userId'),
       headers: {
         'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
@@ -560,10 +560,10 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['username']; // Assuming the response contains the username
+      return UserModel.fromJson(data);
     } else {
-      print('Failed to fetch username: ${response.body}');
-      return null; // Handle error or return null if username cannot be fetched
+      print('Failed to fetch user: ${response.body}');
+      return null;
     }
   }
 }

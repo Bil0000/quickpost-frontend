@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:quickpost_flutter/models/comment_model.dart';
+import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/screens/hashtagposts_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/viewimage_screen.dart';
@@ -182,106 +183,57 @@ class _CommentWidgetState extends State<CommentWidget> {
   }
 
   Widget _buildReplySection() {
-    if (_replies.isEmpty) {
-      return const Text("No replies");
+    List<Comment>? replies = widget.comment.replies;
+    if (replies.isEmpty) {
+      return const Text("No replies yet");
     } else {
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _replies.length,
-        itemBuilder: (context, index) {
-          final reply = _replies[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FutureBuilder<String>(
-                    future: _fetchUsername(_replies[index].userId),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        return const Text("Error loading username");
-                      } else {
-                        return Row(
-                          children: [
-                            const CircleAvatar(
-                              child:
-                                  Icon(Icons.person), // User's profile picture
-                            ),
-                            const SizedBox(width: 8.0),
-                            Text(
-                              snapshot.data ?? "Unknown user",
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 8.0),
-                  FutureBuilder<List<TextSpan>>(
-                    future: _highlightText(_replies[index].text),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done &&
-                          snapshot.hasData) {
-                        return RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 16.0),
-                            children: snapshot.data!,
-                          ),
-                        );
-                      } else {
-                        return const CircularProgressIndicator();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    'Replied on ${DateFormat('dd MMM yyyy').format(_replies[index].createdAt)}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
-                  ),
-                  if (widget.currentUserId == widget.comment.userId)
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {},
-                    ),
-                  if (_isEditingReply[reply.id] ?? false)
-                    Column(
-                      children: [
-                        TextField(
-                          controller: _editReplyControllers[reply.id],
-                          decoration: const InputDecoration(
-                            labelText: 'Edit your reply',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            TextButton(
-                              onPressed: () {},
-                              child: const Text('Save'),
-                            ),
-                            TextButton(
-                              onPressed: () {},
-                              child: const Text('Cancel'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                ],
-              ),
-            ),
-          );
-        },
+      return Column(
+        children: replies
+            .map((reply) => CommentWidget(
+                  comment: reply,
+                  currentUserId: widget.currentUserId,
+                  onCommentDeleted: () =>
+                      _handleReplyDeleted(reply.id.toString()),
+                  onStartReplying: widget.onStartReplying,
+                  onStopReplying: widget.onStopReplying,
+                ))
+            .toList(),
       );
+    }
+  }
+
+  void _handleReplyDeleted(String replyId) {
+    setState(() {
+      widget.comment.replies.removeWhere((reply) => reply.id == replyId);
+    });
+  }
+
+  Future<void> _submitReply() async {
+    String text = _replyController.text.trim();
+    if (text.isNotEmpty) {
+      try {
+        // submitComment now returns a Comment object including the ID
+        Comment newReply = await CommentService()
+            .submitComment(widget.comment.postId, text, widget.comment.id);
+
+        setState(() {
+          widget.comment.replies.insert(
+              0, newReply); // Insert the new reply at the beginning of the list
+          _replyController.clear();
+          _isReplying = false;
+        });
+      } catch (e) {
+        print("Failed to submit comment: $e");
+        final snackBar = SnackBar(
+          content: AwesomeSnackbarContent(
+            title: 'Error!',
+            message: 'Failed to add comment',
+            contentType: ContentType.failure,
+          ),
+          behavior: SnackBarBehavior.floating,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
     }
   }
 
@@ -297,11 +249,6 @@ class _CommentWidgetState extends State<CommentWidget> {
     return username;
   }
 
-  Future<String> fetchUsernameById(String id) async {
-    final username = await authService.fetchUsernameById(id);
-    return username ?? ''; // Provide a default value if null
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -311,26 +258,37 @@ class _CommentWidgetState extends State<CommentWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FutureBuilder<String?>(
-              future: authService.fetchUsernameById(widget.comment.userId),
+            FutureBuilder<UserModel?>(
+              future: authService.fetchUserById(widget.comment.userId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const CircularProgressIndicator();
                 } else if (snapshot.hasError) {
                   return const Text("Error loading username");
                 } else {
-                  return Row(
-                    children: [
-                      const CircleAvatar(
-                        // Placeholder for the user's profile picture
-                        child: Icon(Icons.person),
-                      ),
-                      const SizedBox(width: 8.0),
-                      Text(
-                        snapshot.data ?? "Unknown user",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  UserModel user = snapshot.data!;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProfileScreen(
+                            userId: user.id,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(user.profileImageUrl),
+                        ),
+                        const SizedBox(width: 8.0),
+                        Text(
+                          user.username,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   );
                 }
               },
@@ -387,9 +345,11 @@ class _CommentWidgetState extends State<CommentWidget> {
               children: [
                 TextButton(
                   onPressed: _toggleReplies,
-                  child: Text(_showReplies
-                      ? 'Hide Replies'
-                      : 'Show Replies (${_replies.length})'),
+                  child: Text(
+                    _showReplies
+                        ? 'Hide Replies (${widget.comment.replies.length})'
+                        : 'Show Replies (${widget.comment.replies.length})',
+                  ),
                 ),
                 const Spacer(),
                 if (widget.currentUserId == widget.comment.userId)
@@ -457,7 +417,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: () {},
+                      onPressed: _submitReply,
                     ),
                   ],
                 ),

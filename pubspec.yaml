@@ -60,6 +60,7 @@ dependencies:
   share_plus: ^7.2.1
   video_player: ^2.8.3
   flick_video_player: ^0.7.0
+  path: ^1.9.0
 
 dependency_overrides:
   win32: ^5.0.0

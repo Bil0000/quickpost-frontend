@@ -4,9 +4,10 @@ class Comment {
   final String userId;
   String text;
   final String? commentImageUrl;
-  final String? parentComment;
+  final String? parentCommentId;
+  final bool isReply;
   final DateTime createdAt;
-  final List<Comment>? replies;
+  final List<Comment> replies;
 
   Comment({
     this.id,
@@ -14,7 +15,8 @@ class Comment {
     required this.userId,
     required this.text,
     required this.commentImageUrl,
-    required this.parentComment,
+    required this.parentCommentId,
+    required this.isReply,
     required this.replies,
     required this.createdAt,
   });
@@ -26,13 +28,14 @@ class Comment {
       userId: json['userId'] as String? ?? '',
       text: json['text'] as String? ?? '',
       commentImageUrl: json['commentImageUrl'] as String?,
-      parentComment: json['parentComment'] as String?,
+      parentCommentId: json['parentCommentId'] as String?,
+      isReply: json['isReply'] as bool,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      replies: (json['replies'] as List<dynamic>?)
-          ?.map((e) => Comment.fromJson(e))
-          .toList(),
+      replies: (json['replies'] as List<dynamic>? ?? [])
+          .map((replyJson) => Comment.fromJson(replyJson))
+          .toList(), // Parse nested replies
     );
   }
 }

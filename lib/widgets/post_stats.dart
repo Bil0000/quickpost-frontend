@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
 import 'package:quickpost_flutter/screens/comment_screen.dart';
+import 'package:quickpost_flutter/services/auth_service.dart';
 import 'package:quickpost_flutter/utils/format_number.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -27,11 +28,13 @@ class _PostStatsState extends State<PostStats>
   late bool isLiked;
   late AnimationController _controller;
   late Animation<double> _heartBeatAnimation;
+  String? currentUserId;
 
   @override
   void initState() {
     super.initState();
     isLiked = widget.isLiked;
+    _fetchCurrentUserId();
 
     _controller = AnimationController(
       vsync: this,
@@ -60,6 +63,17 @@ class _PostStatsState extends State<PostStats>
     // if (widget.isLiked) {
     //   _controller.forward(from: 0.0); // Start the animation
     // }
+  }
+
+  void _fetchCurrentUserId() async {
+    // Fetch the current user ID asynchronously
+    String? userId = await AuthService().getCurrentUserId();
+    // Check if the widget is still mounted before calling setState
+    if (mounted) {
+      setState(() {
+        currentUserId = userId;
+      });
+    }
   }
 
   @override
@@ -91,7 +105,7 @@ class _PostStatsState extends State<PostStats>
                   MaterialPageRoute(
                     builder: (context) => CommentsScreen(
                       postId: widget.post.id!,
-                      userId: widget.post.userId,
+                      userId: currentUserId.toString(),
                     ),
                   ),
                 );

@@ -10,31 +10,30 @@ class CommentService {
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  Future<void> submitComment(String postId, String text,
+  Future<Comment> submitComment(String postId, String text,
       [String? parentCommentId]) async {
     final accessToken = await _storage.read(key: 'accessToken');
 
-    // Prepare the request data
-    final data = {
-      'text': text,
-      'postId': postId,
-      'parentCommentId': parentCommentId, // Include only for replies
-    };
-
-    // Call your API to submit the comment
     final response = await http.post(
       Uri.parse('$baseUrl/comments'),
       headers: {
         'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode(data),
+      body: jsonEncode({
+        'text': text,
+        'postId': postId,
+        'parentCommentId': parentCommentId,
+      }),
     );
 
     if (response.statusCode == 201) {
-      print('Comment created');
+      // Assuming successful creation returns the created comment in the response body
+      final Map<String, dynamic> data = json.decode(response.body);
+      return Comment.fromJson(data);
     } else {
-      print("error creating comment");
+      throw Exception(
+          "Failed to create comment. Status code: ${response.statusCode}");
     }
   }
 
@@ -89,6 +88,23 @@ class CommentService {
     } else {
       // Handle error
       throw Exception('Failed to load comments');
+    }
+  }
+
+  Future<List<Comment>> fetchUserComments(String userId) async {
+    final accessToken = await _storage.read(key: 'accessToken');
+    final response = await http.get(
+      Uri.parse('$baseUrl/comments/user/$userId'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> responseData = json.decode(response.body);
+      return responseData.map((data) => Comment.fromJson(data)).toList();
+    } else {
+      throw Exception('Failed to load user comments');
     }
   }
 }

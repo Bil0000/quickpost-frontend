@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decode/jwt_decode.dart';
+import 'package:quickpost_flutter/models/comment_model.dart';
 import 'package:quickpost_flutter/models/follower_model.dart';
 import 'package:quickpost_flutter/models/following_model.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
@@ -9,8 +10,10 @@ import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/screens/edit_profile_screen.dart';
 import 'package:quickpost_flutter/screens/viewimage_screen.dart';
 import 'package:quickpost_flutter/services/auth_service.dart';
+import 'package:quickpost_flutter/services/comment_service.dart';
 import 'package:quickpost_flutter/services/post_service.dart';
 import 'package:quickpost_flutter/utils/format_number.dart';
+import 'package:quickpost_flutter/widgets/comment_widget.dart';
 import 'package:quickpost_flutter/widgets/post_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -40,14 +43,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   int? profileUserID;
   bool _isLoading = true;
   List<Post> _userPosts = [];
+  List<Comment> _userComments = [];
+  String? currentUserId;
 
   @override
   void initState() {
     super.initState();
+    _fetchCurrentUserId();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index == 0) {
         _loadUserPosts();
+      }
+      if (_tabController.index == 1) {
+        _loadUserComments();
       }
     });
 
@@ -56,6 +65,18 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Load posts initially without needing to switch tabs
     _loadUserPosts();
+    _loadUserComments();
+  }
+
+  void _fetchCurrentUserId() async {
+    // Fetch the current user ID asynchronously
+    String? userId = await AuthService().getCurrentUserId();
+    // Check if the widget is still mounted before calling setState
+    if (mounted) {
+      setState(() {
+        currentUserId = userId;
+      });
+    }
   }
 
   void _loadUserPosts() async {
@@ -66,6 +87,22 @@ class _ProfileScreenState extends State<ProfileScreen>
       _userPosts = await PostService().fetchUserPosts(widget.userId.toString());
     } catch (e) {
       print("Error loading posts: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _loadUserComments() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      _userComments =
+          await CommentService().fetchUserComments(widget.userId.toString());
+    } catch (e) {
+      print("Error loading comments: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -445,10 +482,11 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
+                  // Posts tab content...
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : Padding(
-                          padding: const EdgeInsets.only(top: 60.0),
+                          padding: const EdgeInsets.only(top: 45),
                           child: ListView.builder(
                             itemCount: _userPosts.length,
                             itemBuilder: (context, index) {
@@ -457,10 +495,22 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
                         ),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 45),
-                    child: Center(child: Text('Comments tab')),
-                  ),
+                  // Comments tab content
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Padding(
+                          padding: const EdgeInsets.only(top: 50),
+                          child: ListView.builder(
+                            itemCount: _userComments.length,
+                            itemBuilder: (context, index) {
+                              final comment = _userComments[index];
+                              return CommentWidget(
+                                comment: comment,
+                                currentUserId: currentUserId.toString(),
+                              );
+                            },
+                          ),
+                        ),
                 ],
               ),
             ),

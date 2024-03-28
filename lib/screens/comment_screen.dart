@@ -41,12 +41,19 @@ class _CommentsScreenState extends State<CommentsScreen> {
     try {
       List<Comment> loadedComments =
           await CommentService().loadComments(widget.postId);
+      print("Loaded Comments: ${loadedComments.length}"); // Debug print
+
+      // Assuming 'parentCommentId == null' accurately identifies top-level comments
+      final topLevelComments =
+          loadedComments.where((c) => c.isReply == false).toList();
+      print("Top-level Comments: ${topLevelComments.length}"); // Debug print
+
       setState(() {
-        comments = loadedComments;
+        comments =
+            topLevelComments; // Update to only include top-level comments
       });
     } catch (e) {
       print("Failed to load comments: $e");
-      // Optionally, show an error message in the UI
     }
   }
 
@@ -95,6 +102,9 @@ class _CommentsScreenState extends State<CommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topLevelComments =
+        comments.where((comment) => comment.isReply == false).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comments'),
@@ -111,26 +121,26 @@ class _CommentsScreenState extends State<CommentsScreen> {
             ),
           Expanded(
             child: ListView.builder(
-              itemCount: comments.length,
+              itemCount: topLevelComments.length,
               itemBuilder: (context, index) {
                 // Check if the comment is a top-level comment
-                if (comments[index].parentComment == null) {
-                  return CommentWidget(
-                    comment: comments[index],
-                    currentUserId: widget.userId,
-                    onCommentDeleted: () {
-                      setState(() {
-                        // Remove the comment from the list and update UI
-                        comments.removeWhere((c) => c.id == comments[index].id);
-                      });
-                    },
-                    onStartReplying: () => setState(() => _isReplying = true),
-                    onStopReplying: () => setState(() => _isReplying = false),
-                  );
-                } else {
-                  // For replies, either handle them here or ensure they're not added to the main comments list
-                  return Container(); // Or your custom logic for replies
-                }
+                // if (comments[index].parentCommentId == null) {
+                return CommentWidget(
+                  comment: topLevelComments[index],
+                  currentUserId: widget.userId,
+                  onCommentDeleted: () {
+                    setState(() {
+                      // Remove the comment from the list and update UI
+                      comments.removeWhere((c) => c.id == comments[index].id);
+                    });
+                  },
+                  onStartReplying: () => setState(() => _isReplying = true),
+                  onStopReplying: () => setState(() => _isReplying = false),
+                );
+                // } else {
+                //   // For replies, either handle them here or ensure they're not added to the main comments list
+                //   return Container(); // Or your custom logic for replies
+                // }
               },
             ),
           ),

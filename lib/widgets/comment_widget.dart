@@ -336,10 +336,16 @@ class _CommentWidgetState extends State<CommentWidget> {
                 ),
               ),
             const SizedBox(height: 8.0),
-            Text(
-              'Commented on ${DateFormat('dd MMM yyyy').format(widget.comment.createdAt)}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
-            ),
+            if (widget.comment.isReply == false)
+              Text(
+                'Commented on ${DateFormat('dd MMM yyyy').format(widget.comment.createdAt)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
+              ),
+            if (widget.comment.isReply == true)
+              Text(
+                'Replied on ${DateFormat('dd MMM yyyy').format(widget.comment.createdAt)}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12.0),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

@@ -311,7 +311,7 @@ class _FeedScreenState extends State<FeedScreen>
               controller: _tabController,
               children: [
                 _FeedForYouTab(scrollController: _scrollController),
-                _FeedFollowingTab(),
+                _FeedFollowingTab(scrollController: _scrollController),
               ],
             ),
           ],
@@ -343,9 +343,6 @@ class _FeedForYouTabState extends State<_FeedForYouTab> {
   void initState() {
     super.initState();
     _fetchInitialPosts();
-    // Posthog().screen(
-    //   screenName: 'For you tab',
-    // );
     captureScreen();
     SocketService().connect();
 
@@ -518,9 +515,195 @@ class _FeedForYouTabState extends State<_FeedForYouTab> {
   }
 }
 
-class _FeedFollowingTab extends StatelessWidget {
+class _FeedFollowingTab extends StatefulWidget {
+  final ScrollController scrollController;
+
+  const _FeedFollowingTab({super.key, required this.scrollController});
+
+  @override
+  State<_FeedFollowingTab> createState() => __FeedFollowingTabState();
+}
+
+class __FeedFollowingTabState extends State<_FeedFollowingTab> {
+  final PostService postService = PostService();
+
+  List<Post> _allPosts = [];
+  final ValueNotifier<bool> _showNewPostBanner = ValueNotifier(false);
+  bool _isLoading = false;
+  final int _pageSize = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInitialPosts();
+    captureScreen();
+    SocketService().connect();
+
+    // Initial fetch of posts
+    postService.fetchFollowingPosts().then((initialPosts) {
+      if (mounted) {
+        setState(() {
+          _allPosts = initialPosts;
+        });
+      }
+    });
+
+    // Listen to new posts and add them to the list
+    // Listen to new posts and add them to the list or show banner based on scroll position
+    SocketService().postStream.listen((newPost) {
+      if (!mounted) return;
+
+      // Check if the user is at the top of the feed
+      bool isAtTop = widget.scrollController.offset <= 100;
+
+      if (isAtTop) {
+        // User is at the top, insert new post directly
+        setState(() {
+          _allPosts.insert(
+              0, newPost); // Add new post at the beginning of the list
+        });
+      } else {
+        _allPosts.insert(0, newPost);
+        // User has scrolled down, show banner to indicate new posts
+        _showNewPostBanner.value = true;
+      }
+    });
+
+    // Listening to the delete event stream
+    SocketService().deleteStream.listen((deletedPost) {
+      if (mounted) {
+        setState(() {
+          // This efficiently updates the list and UI with minimal overhead
+          _allPosts.removeWhere((post) => post.id == deletedPost.id);
+        });
+      }
+    });
+
+    SocketService().likeStream.listen((data) {
+      final index = _allPosts.indexWhere((post) => post.id == data['postId']);
+      if (index != -1) {
+        setState(() {
+          _allPosts[index].likeCount = data['likeCount'];
+        });
+      }
+    });
+
+    SocketService().unlikeStream.listen((data) {
+      final index = _allPosts.indexWhere((post) => post.id == data['postId']);
+      if (index != -1) {
+        setState(() {
+          _allPosts[index].isLikedByCurrentUser = false;
+          _allPosts[index].likeCount = data['likeCount'];
+        });
+      }
+    });
+
+    // Listen to scroll position changes
+    widget.scrollController.addListener(() {
+      if (widget.scrollController.offset <= 100) {
+        // If at the top, hide the banner
+        _showNewPostBanner.value = false;
+      }
+    });
+
+    widget.scrollController.addListener(() {
+      double maxScroll = widget.scrollController.position.maxScrollExtent;
+      double currentScroll = widget.scrollController.position.pixels;
+      double delta = 100.0; // or something else you want
+      if (maxScroll - currentScroll <= delta) {
+        // Start loading more posts earlier
+        _fetchMorePosts();
+      }
+    });
+  }
+
+  void _fetchInitialPosts() async {
+    List<Post> initialPosts = await postService.fetchFollowingPosts();
+    setState(() {
+      _allPosts = initialPosts;
+    });
+  }
+
+  void _fetchMorePosts() async {
+    if (_isLoading) return; // Prevent multiple simultaneous loads
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    List<Post> morePosts = await postService.fetchFollowingPosts(
+        offset: _allPosts.length, limit: _pageSize);
+
+    setState(() {
+      _allPosts.addAll(morePosts);
+      _isLoading = false;
+    });
+  }
+
+  Future<void> captureScreen() async {
+    return await Posthog().screen(
+      screenName: 'Following tab',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Following Tab'));
+    return Stack(
+      children: [
+        ListView.builder(
+          physics: const ClampingScrollPhysics(),
+          key: const PageStorageKey<String>('postList'),
+          controller: widget.scrollController,
+          itemCount: _allPosts.length + (_isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index < _allPosts.length) {
+              return PostWidget(post: _allPosts[index]);
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _showNewPostBanner,
+          builder: (context, value, child) {
+            return AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              top: value ? 0 : -60, // Use the value to determine the position
+              left: 0,
+              right: 0,
+              child: child!,
+            );
+          },
+          child: _buildNewPostBanner(), // Passing child here to avoid rebuilds
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewPostBanner() {
+    return Container(
+      color: Colors.blue,
+      padding: const EdgeInsets.all(8),
+      child: InkWell(
+        onTap: () {
+          scrollToTop();
+        },
+        child: const Text(
+          "New posts available - Tap to view",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  void scrollToTop() {
+    widget.scrollController.animateTo(
+      0,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeOut,
+    );
+    _showNewPostBanner.value =
+        false; // Update the notifier instead of calling setState
   }
 }

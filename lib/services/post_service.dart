@@ -31,6 +31,28 @@ class PostService {
     }
   }
 
+  Future<List<Post>> fetchFollowingPosts(
+      {int limit = 10, int offset = 0}) async {
+    // Retrieve the access token from secure storage
+    final accessToken = await _storage.read(key: 'accessToken');
+
+    // Include the token in the header
+    final response = await http.get(
+      Uri.parse('$baseUrl/post/following-posts?limit=$limit&offset=$offset'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> responseData = json.decode(response.body);
+      return responseData.map((data) => Post.fromJson(data)).toList();
+    } else {
+      throw Exception(
+          'Failed to load following posts, please try logging out and logging in again');
+    }
+  }
+
   Future<String> fetchUserFullName(String userId) async {
     final response = await http.get(Uri.parse('$baseUrl/auth/$userId'));
     if (response.statusCode == 200) {

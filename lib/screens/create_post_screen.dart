@@ -378,7 +378,7 @@ class MyHomePageState extends State<MyHomePage> {
                                 ),
                               ],
                             ),
-                          ) // const CircularProgressIndicator() // Show loading indicator when posting
+                          )
                         : ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,

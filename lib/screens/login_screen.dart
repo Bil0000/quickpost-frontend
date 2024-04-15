@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _passwordVisible = false;
+  bool _isLogin = false;
 
   @override
   void dispose() {
@@ -101,82 +102,111 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: const TextStyle(color: Colors.red, fontSize: 16),
                   ),
                 ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    // Get the username and password
-                    String username =
-                        _usernameEmailController.text.toLowerCase();
-                    String password = _passwordController.text;
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.3,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      // Get the username and password
+                      String username =
+                          _usernameEmailController.text.toLowerCase();
+                      String password = _passwordController.text;
 
-                    // Call loginUser method
-                    AuthService authService = AuthService();
-                    var response =
-                        await authService.loginUser(username, password);
-
-                    // Check the response status code
-                    if (response.statusCode == 201) {
-                      var responseData = json.decode(response.body);
-                      String accessToken = responseData['access_token'];
-                      String refreshToken = responseData['refresh_token'];
-
-                      // Save tokens securely
-                      await AuthService().saveTokens(accessToken, refreshToken);
-
-                      // Navigate to the next screen
-                      Navigator.of(context).pushReplacementNamed('/main');
-                      await Posthog().capture(
-                        eventName: 'user_logged_in',
-                        properties: {
-                          'login_type': 'email',
-                          'username': username,
-                        },
-                      );
-                    } else if (response.statusCode == 403) {
-                      var responseData = json.decode(response.body);
-                      var message = responseData['message'] ??
-                          'An unknown error occurred';
                       setState(() {
-                        _errorMessage =
-                            message; // Update the error message in the state
+                        _isLogin = true;
                       });
 
-                      Timer(const Duration(seconds: 3), () {
+                      // Call loginUser method
+                      AuthService authService = AuthService();
+                      var response =
+                          await authService.loginUser(username, password);
+
+                      // Check the response status code
+                      if (response.statusCode == 201) {
+                        var responseData = json.decode(response.body);
+                        String accessToken = responseData['access_token'];
+                        String refreshToken = responseData['refresh_token'];
+
+                        // Save tokens securely
+                        await AuthService()
+                            .saveTokens(accessToken, refreshToken);
+
                         setState(() {
-                          _errorMessage = ''; // Clear the error message
+                          _isLogin = false;
                         });
-                      });
 
-                      String? userEmail =
-                          await authService.getEmailByUsername(username);
+                        // Navigate to the next screen
+                        Navigator.of(context).pushReplacementNamed('/main');
+                        await Posthog().capture(
+                          eventName: 'user_logged_in',
+                          properties: {
+                            'login_type': 'email',
+                            'username': username,
+                          },
+                        );
+                      } else if (response.statusCode == 403) {
+                        var responseData = json.decode(response.body);
+                        var message = responseData['message'] ??
+                            'An unknown error occurred';
+                        setState(() {
+                          _isLogin = false;
+                          _errorMessage =
+                              message; // Update the error message in the state
+                        });
 
-                      await Future.delayed(const Duration(seconds: 4));
+                        Timer(const Duration(seconds: 3), () {
+                          setState(() {
+                            _errorMessage = ''; // Clear the error message
+                          });
+                        });
 
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => OtpScreen(
-                            userEmail: userEmail!,
+                        String? userEmail =
+                            await authService.getEmailByUsername(username);
+
+                        await Future.delayed(const Duration(seconds: 4));
+
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => OtpScreen(
+                              userEmail: userEmail!,
+                            ),
                           ),
-                        ),
-                      );
-                    } else {
-                      var responseData = json.decode(response.body);
-                      var message = responseData['message'] ??
-                          'An unknown error occurred';
-                      setState(() {
-                        _errorMessage =
-                            message; // Update the error message in the state
-                      });
-
-                      Timer(const Duration(seconds: 5), () {
+                        );
+                      } else {
+                        var responseData = json.decode(response.body);
+                        var message = responseData['message'] ??
+                            'An unknown error occurred';
                         setState(() {
-                          _errorMessage = ''; // Clear the error message
+                          _errorMessage =
+                              message; // Update the error message in the state
                         });
-                      });
+
+                        Timer(const Duration(seconds: 5), () {
+                          setState(() {
+                            _isLogin = false;
+                            _errorMessage = ''; // Clear the error message
+                          });
+                        });
+                      }
                     }
-                  }
-                },
-                child: const Text('Login'),
+                  },
+                  child: _isLogin
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('Login'),
+                            SizedBox(width: 10),
+                            SizedBox(
+                              height: 10,
+                              width: 10,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Text('Login'),
+                ),
               ),
             ],
           ),

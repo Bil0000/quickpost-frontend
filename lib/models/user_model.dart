@@ -8,6 +8,7 @@ class UserModel {
   final String bannerImageUrl;
   int followerCount;
   final int followingCount;
+  bool isPaid;
 
   UserModel({
     required this.id,
@@ -19,6 +20,7 @@ class UserModel {
     required this.bannerImageUrl,
     required this.followerCount,
     required this.followingCount,
+    required this.isPaid,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class UserModel {
       bannerImageUrl: json['bannerImageUrl'],
       followerCount: json['followerCount'],
       followingCount: json['followingCount'],
+      isPaid: json['isPaid'],
     );
   }
 }

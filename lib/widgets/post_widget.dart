@@ -436,11 +436,13 @@ class _PostWidgetState extends State<PostWidget> {
                                       }
                                     },
                                   ),
-                                  const SizedBox(width: 8.0),
-                                  const Icon(
-                                    Icons.verified,
-                                    size: 16,
-                                  ),
+                                  if (_user?.isPaid ?? false) ...[
+                                    const SizedBox(width: 8.0),
+                                    const Icon(
+                                      Icons.verified,
+                                      size: 16,
+                                    ),
+                                  ],
                                   const SizedBox(width: 4.0),
                                   Flexible(
                                     child: GestureDetector(

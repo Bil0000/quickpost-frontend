@@ -386,10 +386,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            '${_user?.fullname}',
-                            style: Theme.of(context).textTheme.titleLarge,
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Text(
+                                '${_user?.fullname}',
+                                style: Theme.of(context).textTheme.titleLarge,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(width: 10),
+                              if (_user?.isPaid ?? false)
+                                const Icon(
+                                  Icons.verified,
+                                  color: Colors.blue,
+                                ),
+                            ],
                           ),
                         ),
                         isCurrentUserProfile

@@ -3,14 +3,18 @@ import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decode/jwt_decode.dart';
 import 'package:popup_menu/popup_menu.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:quickpost_flutter/models/post_model.dart';
+import 'package:quickpost_flutter/models/user_model.dart';
 import 'package:quickpost_flutter/screens/myprofile_screen.dart';
 import 'package:quickpost_flutter/screens/post_details_screen.dart';
 import 'package:quickpost_flutter/screens/profile_screen.dart';
 import 'package:quickpost_flutter/screens/search_screen.dart';
 import 'package:quickpost_flutter/screens/settings_screen.dart';
+import 'package:quickpost_flutter/services/auth_service.dart';
 import 'package:quickpost_flutter/services/post_service.dart';
 import 'package:quickpost_flutter/services/socket_service.dart';
 import 'package:quickpost_flutter/widgets/post_widget.dart';
@@ -26,6 +30,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  final _storage = const FlutterSecureStorage();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   final PostService postService = PostService();
   List<Post> posts = [];
@@ -37,6 +42,8 @@ class _FeedScreenState extends State<FeedScreen>
   GlobalKey notificationKey = GlobalKey();
   PopupMenu? menu;
   Map<String, String> titleToPostIdMap = {};
+  UserModel? _user;
+  String? _currentUserId;
 
   // void updateUnreadNotificationCount(int count) {
   //   setState(() {
@@ -83,6 +90,32 @@ class _FeedScreenState extends State<FeedScreen>
     // );
 
     fetchNotifications();
+    _loadUser();
+  }
+
+  void _loadUser() async {
+    try {
+      final token = await _storage.read(key: 'accessToken');
+      if (token != null && !Jwt.isExpired(token)) {
+        Map<String, dynamic> decodedToken = Jwt.parseJwt(token);
+        String userId = decodedToken['id'];
+
+        UserModel? user = await AuthService().fetchUserProfile(userId);
+
+        if (user != null) {
+          setState(() {
+            _user = user;
+            _currentUserId = userId;
+          });
+        } else {
+          // Handle user not found or unable to fetch user profile
+        }
+      } else {
+        // Handle token not found or expired
+      }
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<List<String>> fetchNotifications() async {
@@ -277,6 +310,11 @@ class _FeedScreenState extends State<FeedScreen>
           centerTitle: true,
           automaticallyImplyLeading: false,
           title: Image.asset('assets/logo.png', height: 100),
+          leading: IconButton(
+              onPressed: () async {
+                _scaffoldKey.currentState!.openDrawer();
+              },
+              icon: const Icon(Icons.menu)),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 20),
@@ -315,6 +353,59 @@ class _FeedScreenState extends State<FeedScreen>
               ],
             ),
           ],
+        ),
+        drawer: Drawer(
+          child: Stack(
+            children: [
+              ListView(
+                children: [
+                  DrawerHeader(
+                    child: Column(
+                      children: [
+                        Image.asset('assets/logo.png', height: 80),
+                        const SizedBox(height: 10),
+                        const Text('QuickPost'),
+                        const SizedBox(height: 3),
+                        const Text(
+                          'Version: 1.0.0',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.payment),
+                    title: Row(
+                      children: [
+                        if (_user?.isPaid ?? false)
+                          const Text('Unsubscribe')
+                        else
+                          const Text('Subscribe'),
+                      ],
+                    ),
+                    onTap: () {
+                      if (_user!.isPaid == false) {
+                        AuthService().subscribe(_currentUserId ?? '');
+                        setState(() {
+                          _user!.isPaid = true;
+                        });
+                      } else {
+                        AuthService().unSubscribe(_currentUserId ?? '');
+                        setState(() {
+                          _user!.isPaid = false;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

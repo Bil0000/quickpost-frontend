@@ -566,4 +566,42 @@ class AuthService {
       return null;
     }
   }
+
+  Future<UserModel?> subscribe(String userId) async {
+    final accessToken = await _storage.read(key: 'accessToken');
+    final response = await http.post(
+      Uri.parse('$baseUrl/subscribe'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return UserModel.fromJson(data);
+    } else {
+      print('Failed to fetch user: ${response.body}');
+      return null;
+    }
+  }
+
+  Future<UserModel?> unSubscribe(String userId) async {
+    final accessToken = await _storage.read(key: 'accessToken');
+    final response = await http.post(
+      Uri.parse('$baseUrl/unsubscribe'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return UserModel.fromJson(data);
+    } else {
+      print('Failed to fetch user: ${response.body}');
+      return null;
+    }
+  }
 }

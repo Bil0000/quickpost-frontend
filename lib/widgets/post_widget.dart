@@ -61,7 +61,7 @@ class _PostWidgetState extends State<PostWidget> {
     bool showMoreButton = widget.post.caption.length > 100 && !isExpanded;
     _initializeVideoPlayer();
     _getCurrentUserId();
-    _loadUserInfo();
+    _loadPostOwnerInfo();
     // postService.markPostSeen(widget.post.id.toString());
     super.initState();
     _listenToLikeEvents();
@@ -351,6 +351,16 @@ class _PostWidgetState extends State<PostWidget> {
     }
   }
 
+  Future<void> _loadPostOwnerInfo() async {
+    UserModel? postOwner =
+        await AuthService().fetchUserProfile(widget.post.userId);
+    if (postOwner != null) {
+      setState(() {
+        _user = postOwner;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // String creationDate = formatDate(widget.post.createdat);
@@ -441,6 +451,7 @@ class _PostWidgetState extends State<PostWidget> {
                                     const Icon(
                                       Icons.verified,
                                       size: 16,
+                                      color: Colors.blue,
                                     ),
                                   ],
                                   const SizedBox(width: 4.0),
